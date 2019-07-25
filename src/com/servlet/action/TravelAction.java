@@ -16,14 +16,11 @@ import org.apache.log4j.Logger;
 import com.servlet.core.Action;
 import com.xzy.bean.Travel;
 import com.xzy.db.core.DBManager;
-import com.xzy.fileupload.FileUploadUtil;
 
 @WebServlet(urlPatterns = {"/travel"})
 public class TravelAction extends Action {
 
-	/**
-	 * 
-	 */
+	
 	private static final long serialVersionUID = 8438553734919399937L;
     private static final Logger log=Logger.getLogger(TravelAction.class);
 	
@@ -104,20 +101,18 @@ public class TravelAction extends Action {
 	 * @throws IOException
 	 */
 	public void saveTravelAdd(Mapping map)throws ServletException, IOException{
-		String title=map.getString("title");
-		String departureTime=map.getString("departureTime");
-		String city=map.getString("city");
-		String visitcity=map.getString("visitcity");
-		String content=map.getString("content");
-		String ctime=new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
-		String pic=FileUploadUtil.getFilePath();
-		String sql="insert into travel(title,departureTime,city,visitcity,content,issue,ctimes,pic) values(?,?,?,?,?,?,?,?)";
+
+		Travel travel=new Travel();
+		map.getBean(travel);
+		String ctime=new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+		System.out.println(ctime);
+		travel.setCtimes(ctime);
 		try {
-			DBManager.update(sql, title,departureTime,city,visitcity,content,0,ctime,pic);
+			DBManager.add(travel);
 			map.setAttr("success", "增加旅游成功！");
 			map.forward("travel?action=index");     //增加成功跳转到旅游信息的首页
 		} catch (SQLException e) {
-			log.error("增加新的旅游信息失败！@"+this.getClass()+new Date()+e);
+			log.error("增加新的旅游信息失败！@"+this.getClass()+new Date()+e.getMessage());
 			map.setAttr("error", "增加旅游失败！");
 			map.forward("travel?action=gotoAddTravel");   //增加失败，还是在增加的页面
 		}
@@ -131,15 +126,11 @@ public class TravelAction extends Action {
 	 */
 	public void updateTravle(Mapping map)throws ServletException, IOException{
 		long id=map.getLong("id");
-		String title=map.getString("title");
-		String departureTime=map.getString("departureTime");
-		String city=map.getString("city");
-		String visitcity=map.getString("visitcity");
-		String content=map.getString("content");
-		String pic=FileUploadUtil.getFilePath();
+		Travel travel=new Travel();
+		map.getBean(travel);
 		String sql="update travel set title=?,departureTime=?,city=?,visitcity=?,content=?,pic=? where id=?";
 		try {
-			DBManager.update(sql,title,departureTime,city,visitcity,content,pic,id);
+			DBManager.update(sql,travel.getTitle(),travel.getDepartureTime(),travel.getCity(),travel.getVisitcity(),travel.getContent(),travel.getPic(),id);
 			map.setAttr("success","修改旅游信息成功！");
 			map.forward("travel?action=index");
 		} catch (SQLException e) {

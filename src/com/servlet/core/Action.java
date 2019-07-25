@@ -128,18 +128,22 @@ public abstract class Action extends HttpServlet {
 			return re;
 		}
 
+		/**
+		 * 自动填充JavaBean的参数值
+		 * 注意：1.要使个方法发挥作用，HTML代码中input的name的名字必须和JavaBean中的名字对应
+		 *       2.当input的参数是一组值时，应该单独设置他们的值。
+		 * @param bean
+		 */
 		public void getBean(Object bean) {
-			Class<? extends Object> clazzClass = bean.getClass();
-			Field[] all = clazzClass.getDeclaredFields();
+			Class<? extends Object> clazz = bean.getClass();
+			Field[] all = clazz.getDeclaredFields();    //列出该JavaBean中的所有属性
 			if (null != all && all.length > 0) {
 				try {
 					for (Field field : all) {
 						field.setAccessible(true);
-						System.out.println(field.toString());
-						String fname = field.getName();
-						Class<?> type = field.getType();
-						String param = this.getString(fname);
-						System.out.println(param);
+						String fname = field.getName();     //读取属性名
+						Class<?> type = field.getType();   //读取属性的类型
+						String param = this.getString(fname);  //读取request头部的参数值
 						if (type == String.class) {
 							field.set(bean, param);
 						} else if (type == Integer.class || type == int.class || type == Integer.TYPE) {

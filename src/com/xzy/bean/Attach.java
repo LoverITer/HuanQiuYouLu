@@ -4,12 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 public class Attach implements Serializable {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -3631649623537251770L;
-
+	private static final long serialVersionUID = -4736883793930188601L;
 	private long id;
 	private String oldname;
 	private String newpath;

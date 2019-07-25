@@ -28,8 +28,8 @@
                     </div><!--ibox-title-->
                     <div class="ibox-content">
                       
-<form class="form-horizontal" method="post" action="admin/successfull">
-<input type="hidden" name="action" value="saveadd"/>
+<form class="form-horizontal" method="post" action="success">
+<input type="hidden" name="action" value="saveAdd"/>
   <div class="form-group">
     <div class="col-sm-3">
       <input class="form-control" type="text" name="name"  placeholder="请输姓名">
@@ -82,7 +82,7 @@
 	    
 <div class="form-group ">
    
-    <div class="col-sm-3 col-lg-offset-3" >
+    <div class="col-sm-3 col-lg-offset-5" >
     <br/>
     	 <button type="submit" class="btn btn-info btn-lg">增加成功案例  </button>
     </div>
@@ -109,7 +109,7 @@
 
     KindEditor.ready(function(K) {
         window.editor = K.create('#txt1',{
-        	uploadJson : 'admin/fileupload'
+        	uploadJson : 'fileupload'
         });
         
     
@@ -117,7 +117,7 @@
 					editor.loadPlugin('image', function() {
 						editor.plugin.imageDialog({
 							
-						    uploadJson:'admin/fileupload',
+						    uploadJson:'fileupload',
 							imageUrl : K('#pic1').val(),
 							clickFn : function(url, title, width, height, border, align) {
 								K('#pic1').val(url);

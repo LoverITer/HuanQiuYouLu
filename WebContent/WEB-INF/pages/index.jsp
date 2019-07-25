@@ -41,15 +41,9 @@
                             <i class="fa fa-home"></i>
                             <span class="nav-label">主页</span>
                         </a>
-                    <!--</li>
-                       <li>
-                        <a class="J_menuItem top_menu" href="admin/createindex">
-                            <i class="fa fa-home"></i>
-                            <span class="nav-label">生成首页</span>
-                        </a>
-                    </li>-->
+
                     <li>
-                        <a class="J_menuItem top_menu" href="article?action=addArticle">
+                        <a class="J_menuItem top_menu" href="article?action=gotoAddArticle">
                             <i class="fa fa-image"></i>
                             <span class="nav-label">发布资讯</span>
                         </a>
@@ -67,14 +61,14 @@
                         </a>
                     </li>
                     <li>
-                        <a class="J_menuItem top_menu" href="admin/successfull">
+                        <a class="J_menuItem top_menu" href="success?action=index">
                             <i class="fa fa-bullhorn"></i>
                             <span class="nav-label">成功案例</span>
                         </a>
                     </li>
                     
                 <li>
-                        <a class="J_menuItem top_menu" href="admin/house?cid=0&pageNo=1">
+                        <a class="J_menuItem top_menu" href="house?action=index&pageNo=1">
                             <i class="fa fa-building-o"></i>
                             <span class="nav-label">楼盘管理</span>
                         </a>
@@ -116,7 +110,7 @@
                         </a>
                         <ul class="nav nav-second-level">
                              <li>
-                                <a class="J_menuItem" href="admin/city">国家</a>
+                                <a class="J_menuItem" href="country">国家</a>
                             </li>
                             <li>
                                 <a class="J_menuItem" href="admin/focuspic">焦点图</a>

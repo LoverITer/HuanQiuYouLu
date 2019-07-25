@@ -28,15 +28,15 @@
                     </div><!--ibox-title-->
                     <div class="ibox-content">
                       
-<form class="form-horizontal" method="post" action="admin/successfull">
-<input type="hidden" name="action" value="saveedit"/>
+<form class="form-horizontal" method="post" action="success">
+<input type="hidden" name="action" value="saveEdit"/>
   <div class="form-group">
 	    <div class="col-sm-3">
-	      <input class="form-control" type="text" name="name"  placeholder="请输姓名" value="${success.name}">
-	      <input type="hidden" name="id" value="${success.id}"/>
+	      <input class="form-control" type="text" name="name"  placeholder="请输姓名" value="${successful.name}">
+	      <input type="hidden" name="id" value="${successful.id}"/>
 	    </div>
 	   <div class="col-sm-3">
-	    	 <input class="form-control" type="text" name="house"  placeholder="选择的项目" value="${success.house}">
+	    	 <input class="form-control" type="text" name="house"  placeholder="选择的项目" value="${successful.house}">
 	    </div>
 	    <div class="col-sm-3">
 	    	<select name="level" class="form-control">
@@ -54,12 +54,12 @@
   </div>
   <div class="form-group ">
      <div class=col-sm-7>
-       <input class="form-control" type="text" name="why" value="${success.why}"  placeholder="客户为什么选择项目">
+       <input class="form-control" type="text" name="why" value="${successful.why}"  placeholder="客户为什么选择项目">
      </div>
   </div>
   <div class="form-group ">
     <div class="col-sm-12">
-    	<textarea name="dis" class="form-control" id="txt1" style="height:300px">${success.dis}</textarea>
+    	<textarea name="dis" class="form-control" id="txt1" style="height:300px">${successful.dis}</textarea>
     </div>
   </div>
   
@@ -67,14 +67,14 @@
    
         <label  class="col-sm-1 control-label">项目图:</label>
 	    <div class="col-sm-1">
-	          <input type="hidden" id="pic1" name="pic1"  value="${success.pic1}"/>
-	          <img id="uppic01" src="${success.pic1}" style="width:68px; height:57px" />
+	          <input type="hidden" id="pic1" name="pic1"  value="${successful.pic1}"/>
+	          <img id="uppic01" src="${successful.pic1}" style="width:68px; height:57px" />
 	    </div>
 	
 	    <label  class="col-sm-1 control-label">客户头像:</label>
 	    <div class="col-sm-1">
-	          <input type="hidden" id="pic2" name="pic2" value="${success.pic2}"/>
-	          <img id="uppic02" src="${success.pic2}" style="width:68px; height:57px" />
+	          <input type="hidden" id="pic2" name="pic2" value="${successful.pic2}"/>
+	          <img id="uppic02" src="${successful.pic2}" style="width:68px; height:57px" />
 	    </div>
    </div>
     
@@ -108,7 +108,7 @@
 
     KindEditor.ready(function(K) {
         window.editor = K.create('#txt1',{
-        	uploadJson : 'admin/fileupload'
+        	uploadJson : 'fileupload'
         });
         
     
@@ -116,7 +116,7 @@
 					editor.loadPlugin('image', function() {
 						editor.plugin.imageDialog({
 							
-						    uploadJson:'admin/fileupload',
+						    uploadJson:'fileupload',
 							imageUrl : K('#pic1').val(),
 							clickFn : function(url, title, width, height, border, align) {
 								K('#pic1').val(url);
@@ -131,7 +131,7 @@
 					editor.loadPlugin('image', function() {
 						editor.plugin.imageDialog({
 							
-						    uploadJson:'admin/fileupload',
+						    uploadJson:'fileupload',
 							imageUrl : K('#pic2').val(),
 							clickFn : function(url, title, width, height, border, align) {
 								K('#pic2').val(url);

@@ -2,6 +2,7 @@ package com.xzy.db.core;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,6 +17,7 @@ import java.util.TreeMap;
 
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
+import org.apache.commons.dbutils.handlers.ArrayHandler;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -148,44 +150,40 @@ public class DBManager {
 	 * @param t
 	 * @return 返回增加的对象的id值
 	 */
-	public static <T> Long add(T t) throws SQLException{
-		// 拼SQL语句 insert into table_name(f1,f2,f3...) values(?,?,?,?);
+	public static <T> long add(T t) throws SQLException {
+		// 解析表名，
+		String tname = getTableName(t.getClass());
 		TreeMap<String, Object> map = parseAllField(t);
-		StringBuilder fields = new StringBuilder();
-		StringBuilder querys = new StringBuilder();
+		StringBuilder flist = new StringBuilder();
+		StringBuilder qlist = new StringBuilder();
 		List<Object> values = new ArrayList<Object>();
-		Long lastInsertID = -1L;
 		if (null != map && null != map.keySet() && map.keySet().size() > 0) {
 			Iterator<String> it = map.keySet().iterator();
 			while (it.hasNext()) {
 				String key = it.next();
-				if (null == map.get(key))
-					continue;
-				fields.append(key + ",");
-				querys.append("?,");
+				if (null == map.get(key)) continue;
+				flist.append(key + ",");
+				qlist.append("?,");
 				values.add(map.get(key));
 			}
 		}
-		if (fields.length() > 0) {
-			fields.delete(fields.length() - 1, fields.length());
+		if (flist.length() > 0) {
+			flist.delete(flist.length() - 1, flist.length());
+		}	
+		if (qlist.length() > 0) {
+			qlist.delete(qlist.length() - 1, qlist.length());
 		}
-		if (querys.length() > 0) {
-			querys.delete(querys.length() - 1, querys.length());
-		}
-		String sql = "insert into " + getTableName(t.getClass()) + "(" + fields + ") " + "values(" + querys + ")";
+		String sql = "insert into " + tname + "(" + flist.toString() + ") values(" + qlist.toString() + ")";
 
-		try {
-			run.update(getConnection(), sql, values.toArray());
-			PreparedStatement ps = getConnection().prepareStatement("select LAST_INSERT_ID()"); // 查找最新增加的一条数据的ID值
-			ResultSet rs = ps.executeQuery();
-			if (rs.next()) {
-				lastInsertID = rs.getLong(1);
-			}
-		} catch (SQLException e) {
-			logger.error("增加数据失败@DBManager.add()" + new Date());
-			System.out.println("增加数据失败@DBManager.add()");
+		update(sql, values.toArray());
+		Object lastid = query("select LAST_INSERT_ID() from dual", new ArrayHandler())[0];
+		long relastid = -1;
+		if (null != lastid && lastid instanceof Long) {
+			relastid = ((Long) lastid).longValue();
+		} else if (null != lastid && lastid instanceof BigInteger) {
+			relastid = ((BigInteger) lastid).longValue();
 		}
-		return lastInsertID;
+		return relastid;
 	}
 
 	/**
@@ -194,7 +192,7 @@ public class DBManager {
 	 * @param <T>
 	 * @param t
 	 */
-	public static <T> void update(T t) throws SQLException{
+	public static <T> void update(T t) throws SQLException {
 		// 拼SQL语句 update table_name set fields1=?,fileds2=?.... where condition=?
 		StringBuilder fields = new StringBuilder();
 		StringBuilder querys = new StringBuilder();
@@ -227,7 +225,7 @@ public class DBManager {
 	 * @param id
 	 * @param clazz
 	 */
-	public static <T> void delete(Long id, Class<T> clazz) throws SQLException{
+	public static <T> void delete(Long id, Class<T> clazz) throws SQLException {
 		String sql = "delete from " + getTableName(clazz) + " where id=?";
 		try {
 			run.update(getConnection(), sql, id);
@@ -246,7 +244,7 @@ public class DBManager {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T get(Long id, Class<T> clazz) throws SQLException{
+	public static <T> T get(Long id, Class<T> clazz) throws SQLException {
 		// select * from table_name where id=?;
 		Object object = null;
 		StringBuilder fields = new StringBuilder();
@@ -270,7 +268,7 @@ public class DBManager {
 	 * @param clazz
 	 * @return
 	 */
-	public static <T> List<T> getAll(Class<T> clazz) throws SQLException{
+	public static <T> List<T> getAll(Class<T> clazz) throws SQLException {
 		// select * from table_name;
 		List<T> lists = new ArrayList<T>();
 		String sql = "select * from " + getTableName(clazz);
@@ -279,6 +277,26 @@ public class DBManager {
 		} catch (SQLException e) {
 			System.out.println("查询数据失败！@DBManager.getAll()");
 			logger.error("查询数据失败！@DBManager.getAll()");
+		}
+		return lists;
+	}
+
+	/**
+	 * 根据给定的sql语句来查询全部符合的信息
+	 * 
+	 * @param <T>
+	 * @param clazz
+	 * @param sql
+	 * @return
+	 * @throws SQLException
+	 */
+	public static <T> List<T> getAll(Class<T> clazz, String sql) throws SQLException {
+		List<T> lists = new ArrayList<T>();
+		try {
+			lists = run.query(getConnection(), sql, new BeanListHandler<T>(clazz));
+		} catch (SQLException e) {
+			System.out.println("查询数据失败！@DBManager.getAll()");
+			logger.error("查询数据失败！@DBManager.getAll()@Line299");
 		}
 		return lists;
 	}
@@ -303,54 +321,119 @@ public class DBManager {
 			list = run.query(getConnection(), sql, new BeanListHandler<T>(clazz), (pageNo - 1) * pageSize, pageSize);
 			// 查询表的总记录个数
 			String sqltotal = "select count(id) from " + getTableName(clazz);
-			Object re = run.query(getConnection(),sqltotal, new ScalarHandler<Long>());
+			Object re = run.query(getConnection(), sqltotal, new ScalarHandler<Long>());
 			long total = 0;
 			if (null != re && re instanceof Long) {
 				total = (Long) re;
 			}
 			pageDiv = new PageDiv<T>(pageNo, pageSize, total, list);
 		} catch (SQLException e) {
-			logger.error("数据库分页查询失败！@Line:314");
+			logger.error("数据库分页查询失败！@Line:331");
 			e.printStackTrace();
 		}
 
 		return pageDiv;
 	}
-	
+
 	/**
-	 * 根据传过来的SQL语句进行分表查询
-	 * @param <T>   java bean
-	 * @param sql   SQL语句 
-	 * @param clazz  bean 的字节码
+	 * 根据传过来的SQL语句和关键字keyword进行搜索并分页
+	 * 
+	 * @param <T>      java bean
+	 * @param sql      SQL语句
+	 * @param clazz    bean 的字节码
 	 * @param pageNo   开始的页数
-	 * @param pageSize  每页的大小
-	 * @param keyword   查询的关键字
+	 * @param pageSize 每页的大小
+	 * @param keyword  查询的关键字
 	 * @return
 	 */
-	public static<T> PageDiv<T> getByPage(String sql,Class<T> clazz, Long pageNo, Long pageSize,String keyword) {
-		PageDiv<T> pd=null;
+	public static <T> PageDiv<T> getByPage(String sql, Class<T> clazz, Long pageNo, Long pageSize, String keyword) {
+		PageDiv<T> pd = null;
 		List<T> list = new ArrayList<T>();
-		
+
 		try {
 			// 存放分页查询的结果
-			list = run.query(getConnection(), sql, new BeanListHandler<T>(clazz),keyword, (pageNo - 1) * pageSize, pageSize);
+			list = run.query(getConnection(), sql, new BeanListHandler<T>(clazz), keyword, (pageNo - 1) * pageSize,
+					pageSize);
 			// 查询表的总记录个数
-			String sqltotal = "select count(id) from " + getTableName(clazz)+" where keywords=?";
-			Object re = run.query(getConnection(),sqltotal, new ScalarHandler<Long>(),keyword);
+			String sqltotal = "select count(id) from " + getTableName(clazz) + " where keywords=?";
+			Object re = run.query(getConnection(), sqltotal, new ScalarHandler<Long>(), keyword);
 			long total = 0;
 			if (null != re && re instanceof Long) {
 				total = (Long) re;
 			}
-			pd= new PageDiv<T>(pageNo, pageSize, total, list);
+			pd = new PageDiv<T>(pageNo, pageSize, total, list);
 		} catch (SQLException e) {
-			logger.error("数据库分页查询失败！@Line:346");
+			logger.error("数据库分页查询失败！@Line:364");
 			e.printStackTrace();
 		}
 
 		return pd;
 	}
 
-/********************重写QueryRunner中的方法****************************************/
+	public static <T> PageDiv<T> getByPage(Class<T> clazz, String sql, long pageNo, long pageSize, Object... param)
+			throws SQLException {
+		PageDiv<T> pd = null;
+
+		// 当前页面的数据
+		List<T> list = new ArrayList<T>();
+		Object[] params = new Object[param.length + 2];
+		System.arraycopy(param, 0, params, 0, param.length);
+		params[param.length] = (pageNo - 1) * pageSize;
+		params[param.length + 1] = pageSize;
+
+		list = query(sql + " limit ?,?", new BeanListHandler<T>(clazz), params);
+		int fromstart = sql.toLowerCase().indexOf("from");
+		String totalsql = "select count(id) " + sql.substring(fromstart);
+		Object re = query(totalsql, new ArrayHandler(), param)[0];
+		long total = 0;
+
+		if (null != re && re instanceof Long) {
+			total = (Long) re;
+		}
+		pd = new PageDiv<T>(pageNo, pageSize, total, list);
+		return pd;
+	}
+
+	/**
+	 * 根据sql进行查询
+	 * 
+	 * @param <T>
+	 * @param clazz
+	 * @param sql
+	 * @param pageNo
+	 * @param pageSize
+	 * @return
+	 */
+	public static <T> PageDiv<T> getByPage(Class<T> clazz, String sql, String... params) {
+		PageDiv<T> pageDiv = null;
+		List<T> list = new ArrayList<T>();
+		// 对表进行分页
+		// String sql = "select * from " + getTableName(clazz) + " order by id desc
+		// limit ?,?";
+
+		try {
+			// 存放分页查询的结果
+			list = run.query(getConnection(), sql, new BeanListHandler<T>(clazz),
+					(Long.parseLong(params[0]) - 1) * Long.parseLong(params[1]), Long.parseLong(params[1]));
+			// 查询表的总记录个数
+			String sqltotal = "select count(id) from " + getTableName(clazz);
+			Object re = run.query(getConnection(), sqltotal, new ScalarHandler<Long>());
+			long total = 0;
+			if (null != re && re instanceof Long) {
+				total = (Long) re;
+			}
+			pageDiv = new PageDiv<T>(Long.parseLong(params[0]), Long.parseLong(params[1]), total, list);
+		} catch (SQLException e) {
+			logger.error("数据库分页查询失败！@Line:398");
+			e.printStackTrace();
+		}
+
+		return pageDiv;
+	}
+
+	/********************
+	 * 重写QueryRunner中的方法
+	 ****************************************/
 	public static int[] batch(String sql, Object[][] params) throws SQLException {
 		Connection conn = getConnection();
 		int[] result = run.batch(conn, sql, params);
@@ -393,7 +476,7 @@ public class DBManager {
 		return result;
 	}
 
-	/************************** 对增删改查操作的支持性方法*************************/
+	/************************** 对增删改查操作的支持性方法 *************************/
 	/**
 	 * 解析表名
 	 * 
@@ -408,7 +491,7 @@ public class DBManager {
 			Table table = (Table) annotation;
 			tableName = table.value();
 		} else {
-			//System.out.println("2");
+			// System.out.println("2");
 			String allName = clazz.getName();
 			int lastdot = allName.lastIndexOf(".");
 			tableName = allName.substring(lastdot + 1, lastdot + 2).toLowerCase() + allName.substring(lastdot + 2);

@@ -20,7 +20,6 @@ import com.xzy.bean.Channel;
 import com.xzy.bean.Country;
 import com.xzy.db.core.DBManager;
 import com.xzy.db.core.PageDiv;
-import com.xzy.fileupload.FileUploadUtil;
 
 @WebServlet(urlPatterns = {"/article"})
 public class ArticleAction extends Action {
@@ -39,7 +38,10 @@ public class ArticleAction extends Action {
 		String sql2="select * from article where id=?";
 		try {
 			Article art=DBManager.query(sql2, new BeanHandler<Article>(Article.class),id);
-			Channel channel=DBManager.query(sql,new BeanHandler<Channel>(Channel.class),art.getChannelId());
+			Channel channel=null;
+			if(null!=art) {
+			 channel=DBManager.query(sql,new BeanHandler<Channel>(Channel.class),art.getChannelId());
+			}
 			map.setAttr("channel", channel);
 		    map.setAttr("art", art); 
 		    map.forward("WEB-INF/pages/article_show.jsp");
@@ -56,7 +58,7 @@ public class ArticleAction extends Action {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	public void addArticle(Mapping map)throws ServletException, IOException{
+	public void gotoAddArticle(Mapping map)throws ServletException, IOException{
 		String sql1="select id,name from channel";
 		String sql2="select countryId,name from country";
 		List<Channel> channels=null;
@@ -104,10 +106,7 @@ public class ArticleAction extends Action {
 			log.error("查询文章失败！@"+this.getClass().getName()+new Date()+e.getMessage());
 			e.printStackTrace();
 		}
-		
 		PageDiv<Article> pd=DBManager.getByPage(Article.class, 1L, 20L);
-	
-		
 		HttpServletRequest request=map.getRequest();
 		request.setAttribute("art", art);
 		request.setAttribute("channels", channels);
@@ -124,25 +123,21 @@ public class ArticleAction extends Action {
 	 * @throws IOException
 	 */
 	public void saveArticle(Mapping map)throws ServletException, IOException{
-		String title=map.getString("title");
-		String channelId=map.getString("channel_id");
-		String keywords=map.getString("keywords");
-		String countryId=map.getString("country_id");
-		String content=map.getString("content");
-		String pic=FileUploadUtil.getFilePath();    //拿到文件在服务器上存储的绝对位置
-		String level=map.getString("level");
+		Article article =new Article();
+		map.getBean(article);
 		String ctime=new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
-		String sql="insert into article(title,channelId,keywords,countryId,content,pic,level,visits,ctime) values(?,?,?,?,?,?,?,?,?)";
+		//System.out.println("ctime:"+ctime);
+		article.setCtime(ctime);
+		article.setVisits("0");   //默认访问量是0
 		try {
-			DBManager.update(sql, title,channelId,keywords,countryId,content,pic,level,"0",ctime);
+			DBManager.add(article);
 			map.setAttr("success", "添加资讯成功！");
+			map.forward("article?action=index");
 		} catch (SQLException e) {
 			map.setAttr("error","添加资讯失败");
-			log.error("增加资讯失败！"+new Date());
-		}finally {
-			map.forward("article?action=addArticle");   
+			log.error("增加资讯失败！"+new Date()+e.getMessage());
+			map.forward("article?action=gotoAddArticle");
 		}
-		
 	}
 	
 	
@@ -154,7 +149,7 @@ public class ArticleAction extends Action {
 	 */
 	public void searchAritcle(Mapping map)throws ServletException, IOException{
 		String keywords=map.getString("keywords");   //得到查询的关键字
-		String sql="select * from article where keywords=? order by id desc limit ?,?";
+		String sql="select * from article where keywords like ? order by id desc limit ?,?";
 		String sql1="select * from article";
 		String sql2="select id,name from channel";
 		List<Article> art=null;
@@ -172,7 +167,7 @@ public class ArticleAction extends Action {
 			log.error("查询文章失败！@"+this.getClass().getName()+new Date()+e.getMessage());
 		}
 		
-		PageDiv<Article> pd=DBManager.getByPage(sql,Article.class, 1L, 20L,keywords);
+		PageDiv<Article> pd=DBManager.getByPage(sql,Article.class, 1L, 20L,"%"+keywords+"%");
 		
 		HttpServletRequest request=map.getRequest();
 		request.setAttribute("art", art);
@@ -208,21 +203,16 @@ public class ArticleAction extends Action {
 	 * @throws IOException
 	 */
 	public void saveUpdate(Mapping map)throws ServletException, IOException{
-		String id=map.getString("id");
-		String title=map.getString("title");
-		String channelId=map.getString("channel_id");
-		String keywords=map.getString("keywords");
-		String countryId=map.getString("country_id");
-		String content=map.getString("content");
-		String pic=FileUploadUtil.getFilePath();    //拿到文件在服务器上存储的绝对位置
-		String level=map.getString("level");
-		//System.out.println("id:"+id+"\t title:"+title+"\t channelId:"+channelId+"\t keywords:"+keywords+"\t countryId:"+countryId);
 		String sql="update article set title=?,channelId=?,keywords=?,countryId=?,content=?,pic=?,level=? where id=?";
+		Article article=new Article();
+		map.getBean(article);
 		try {
-			DBManager.update(sql,title,Integer.parseInt(channelId),keywords,Integer.parseInt(countryId),content,pic,level,Long.parseLong(id));
+			DBManager.update(sql,article.getTitle(),article.getChannelId(),article.getKeywords(),article.getCountryId(),article.getContent(),article.getPic(),article.getLevel(),article.getId());
+			map.setAttr("success", "修改资讯成功！");
 			map.forward("article?action=gotoAritcleList");   //修改操作成功进入到资讯管理主页面
 		} catch (SQLException e) {
 			//修改失败返回修改页面重新修改
+			map.setAttr("error","修改资讯失败！");
 			map.forward("article?action=gotoUpdateAritcle");
 			log.error("修改失败！@"+this.getClass()+e);
 		}

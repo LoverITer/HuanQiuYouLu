@@ -41,7 +41,7 @@
 							placeholder="请输入标题">
 					</div>
 					<div class="col-sm-3">
-						<select name="channel_id" class="form-control">
+						<select name="channelId" class="form-control">
 
 							<c:forEach items="${channels}" var="channel">
 								<option value="${channel.id}">${channel.name}</option>
@@ -57,7 +57,7 @@
 					</div>
 
 					<div class="col-sm-3">
-						<select name="country_id" class="form-control">
+						<select name="countryId" class="form-control">
 							<c:forEach items="${countrys}" var="country">
 								<option value="${country.id}">${country.name}</option>
 							</c:forEach>

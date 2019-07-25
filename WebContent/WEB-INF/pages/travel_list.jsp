@@ -60,7 +60,6 @@
 						<th>出发时间</th>
 						<th>管理</th>
 					</tr>
-
 					<c:forEach items="${list}" var="art" varStatus="vs">
 						<tr>
 							<td>${vs.count}</td>

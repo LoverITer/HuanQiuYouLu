@@ -4,6 +4,7 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -17,64 +18,72 @@ import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
-
 public class FileUploadUtil {
 
-	private long maxSize = 1024 * 1024 * 5L;   // 5M
-	private String allowExt[];   // 允许得到扩展名
-	private String basePath;     // 允许上传的绝对路径
-	private List<FilePart> filePart = new ArrayList<FilePart>(); // 上传的文件保存在FilePart中
-	private Map<String, String> formvalues = new HashMap<String, String>(); // 保存表单的值
-	private SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddhhmmss");
+	// 最大上传文件大小
+	private long maxSize = 1024 * 1024 * 5;
+	// 充许的扩展名
+	private String allowExt[];
+	// 允许上传的路径绝对值
+	private String basePath;
+	// 上传的文件记在filePart中
+	private List<FilePart> filePart = new ArrayList<FilePart>();
+	// 记住表单的值
+	private Map<String, String> formValues = new HashMap<String, String>();
+
+	private SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmssSSS");
 	private Random rand = new Random();
-	private SimpleDateFormat sdfDir = new SimpleDateFormat("yyyyMMdd");
-	private static String filePath;   //图片在本地磁盘上保存的绝对路径
-	/*
-	 * 文件上传的关键类
-	 */
+	SimpleDateFormat sdfdir = new SimpleDateFormat("yyyyMMdd");
+	// 文件上传相关类
 	FileItemFactory factory = new DiskFileItemFactory();
 	ServletFileUpload upload = new ServletFileUpload(factory);
-	HttpServletRequest request;
+	HttpServletRequest req;
 
-	public FileUploadUtil(HttpServletRequest request, long maxSize, String[] allowExt, String baesPath) {
-		this.request = request;
-		this.allowExt = allowExt;
-		this.basePath = baesPath;
+	// 构造方法
+	public FileUploadUtil(HttpServletRequest req, long maxSize, String allowExt[], String basePath) {
 		this.maxSize = maxSize;
+		this.allowExt = allowExt;
+		this.basePath = basePath;
+		this.req = req;
 		upload.setHeaderEncoding("UTF-8");
 	}
 
+	// 得到文件扩展名
 	public String getFileExtName(String fname) {
 		String str = null;
 		int index = fname.lastIndexOf(".");
-		if (index > 0) {
-			str = fname.toLowerCase().substring(index); // 截取文件名的后缀名(带点)
+		if (index != -1) {
+			str = fname.toLowerCase().substring(index);// 带点
 		}
 		return str;
 	}
 
-	/**
-	 * <p>
-	 * 文件上传核心功能
-	 * <p>
-	 * 
-	 * @throws Exception
-	 */
-
-	@SuppressWarnings("static-access")
-	public void uploadFile(String savePath) throws Exception {
-
-		if (!upload.isMultipartContent(request)) {
+	public void uploadFile() throws Exception {
+		File base = new File(basePath);
+		if (!ServletFileUpload.isMultipartContent(req)) {
 			throw new Exception("没有要上传的内容");
 		}
-		List<FileItem> items = upload.parseRequest(request);
+		if (!base.exists()) {
+			throw new Exception("上传目录不存在");
+		}
+		if (!(base.isDirectory() && base.canWrite())) {
+			throw new Exception("上传目录没有写权限");
+		}
+
+		List<FileItem> items = upload.parseRequest(req);
 		Iterator<FileItem> itr = items.iterator();
 		while (itr.hasNext()) {
 			FileItem item = (FileItem) itr.next();
-			// 文件上传
+			//String fileName = item.getName();
+			//long fileSize = item.getSize();
 			if (!item.isFormField()) {
-
+				// 文件上传
 				FilePart fp = new FilePart();
+				fp.setFiledName(item.getFieldName());
+				fp.setFileName(item.getName().toLowerCase());
+				fp.setMime(item.getContentType());
+				fp.setFilesize(item.getSize());
+				// 检查
 				// 检查文件大小
 				if (item.getSize() > maxSize) {
 					fp.setResult(1);
@@ -86,36 +95,32 @@ public class FileUploadUtil {
 					continue;
 				}
 
-				fp.setFiledName(item.getFieldName());
-				fp.setFileName(item.getName().toLowerCase());
-				fp.setMime(item.getContentType());
-				fp.setFilesize(item.getSize());
-				
 				try {
-					String path1 = request.getServletContext().getRealPath(savePath);
-					System.out.println(path1);
-					
-					
-					File path = new File(savePath);
-					if (!path.exists()) {
-						path.mkdirs();
-					}
-					
-					//构建图片的真正的存放路径
-					File realPath=new File(path.toString() + "//" + System.currentTimeMillis()
-					+ getFileExtName(item.getName()));
-					
-					System.out.println(realPath);
-					setFilePath(realPath.toString());    //把图片在本地的保存地址保存到数据库
+					// 创建文件夹目录
+					String ymd = sdfdir.format(new Date());
 
-					item.write(realPath); // 把文件写到服务器上
+					// this.basePath=basePath+File.separator+ymd;
+					File dirFile = new File(basePath + File.separator + ymd);
+					if (!dirFile.exists()) {
+						dirFile.mkdirs();
+					}
+
+					String newname = ymd + rand.nextInt(1000) + getFileExtName(item.getName());
+					File uploadedFile = new File(dirFile, newname);
+
+					item.write(uploadedFile);
+					fp.setNewname(ymd + "/" + newname);// 设置新名字
 				} catch (Exception e) {
 					e.printStackTrace();
+					throw new Exception("上传失败");
 				}
+				filePart.add(fp);   // 加到filepart中
+
 			} else {
-				formvalues.put(item.getFieldName(), item.getString("utf-8"));
+				formValues.put(item.getFieldName(), item.getString("utf-8"));
 			}
 		}
+
 	}// end uploadFile
 
 	public long getMaxSize() {
@@ -130,8 +135,8 @@ public class FileUploadUtil {
 		return allowExt;
 	}
 
-	public void setAllowExt(String[] allowEx) {
-		this.allowExt = allowEx;
+	public void setAllowExt(String[] allowExt) {
+		this.allowExt = allowExt;
 	}
 
 	public String getBasePath() {
@@ -150,12 +155,12 @@ public class FileUploadUtil {
 		this.filePart = filePart;
 	}
 
-	public Map<String, String> getFormvalues() {
-		return formvalues;
+	public Map<String, String> getFormValues() {
+		return formValues;
 	}
 
-	public void setFormvalues(Map<String, String> formvalues) {
-		this.formvalues = formvalues;
+	public void setFormvalues(Map<String, String> formValues) {
+		this.formValues = formValues;
 	}
 
 	public SimpleDateFormat getSdf() {
@@ -174,14 +179,6 @@ public class FileUploadUtil {
 		this.rand = rand;
 	}
 
-	public SimpleDateFormat getSdfDir() {
-		return sdfDir;
-	}
-
-	public void setSdfDir(SimpleDateFormat sdfDir) {
-		this.sdfDir = sdfDir;
-	}
-
 	public FileItemFactory getFactory() {
 		return factory;
 	}
@@ -198,20 +195,12 @@ public class FileUploadUtil {
 		this.upload = upload;
 	}
 
-	public HttpServletRequest getRequest() {
-		return request;
+	public HttpServletRequest getReq() {
+		return req;
 	}
 
-	public void setRequest(HttpServletRequest request) {
-		this.request = request;
-	}
-
-	public static String getFilePath() {
-		return filePath;
-	}
-
-	public void setFilePath(String Path) {
-		filePath = Path;
+	public void setReq(HttpServletRequest req) {
+		this.req = req;
 	}
 
 }

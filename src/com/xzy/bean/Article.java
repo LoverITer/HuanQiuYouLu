@@ -1,7 +1,6 @@
 package com.xzy.bean;
 
 import java.io.Serializable;
-import java.util.Date;
 
 import com.hqyl.annotation.Table;
 
@@ -15,10 +14,10 @@ public class Article implements Serializable {
 	private String content;     //资讯的内容
 	private String pic;         //资讯的图片
 	private String visits;      //资讯的访问次数
-	private Date ctime;         //资讯添加的时间
-	private long channelId;        //资讯的栏目id
-	private long countryId;         //资讯的国家id   
-	private long level;             //资讯的等级
+	private String ctime;       //资讯添加的时间
+	private long channelId;     //资讯的栏目id
+	private long countryId;     //资讯的国家id   
+	private long level;         //资讯的等级
 
 	public long getId() {
 		return id;
@@ -68,12 +67,12 @@ public class Article implements Serializable {
 		this.visits = visits;
 	}
 
-	public Date getCtime() {
+	public String getCtime() {
 		return ctime;
 	}
 
-	public void setCtime(Date ctime) {
-		this.ctime = ctime;
+	public void setCtime(String string) {
+		this.ctime = string;
 	}
 
 	public long getChannelId() {

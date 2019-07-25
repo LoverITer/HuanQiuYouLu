@@ -27,13 +27,13 @@ public class House implements Serializable {
 	private long countryId;
 	private long cityId;
 	private int level;
-	private Date ctimes;
+	private String ctimes;     //创建时间
 	private String txt1;
 	private String txt2;
 	private String txt3;
 	private String pic;
-	private long yjPersent;
-	private String yjMany;
+	private long yjPersent;   //佣金百分率
+	private String yjMany;    //佣金
 	private int isdel;
 	private String target;
 
@@ -173,12 +173,12 @@ public class House implements Serializable {
 		this.level = level;
 	}
 
-	public Date getCtimes() {
+	public String getCtimes() {
 		return ctimes;
 	}
 
-	public void setCtimes(Date ctimes) {
-		this.ctimes = ctimes;
+	public void setCtimes(String string) {
+		this.ctimes = string;
 	}
 
 	public String getTxt1() {
